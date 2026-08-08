@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Generador de Laberintos Masivo</title>
+<link rel="icon" type="image/png" href="icon.png">
+<meta name="keywords" content="generador de laberintos, exportar laberintos en gran cantidad, export mazes in large quantities, generador de laberintos masivo, generador masivo de laberintos, massive maze generator, crear laberintos online, laberintos para imprimir, laberintos PDF, laberintos gratis, laberintos minimalistas, laberintos con solución, imprimir laberintos, laberintos para niños, laberintos para adultos, laberintos educativos, laberintos para profesores, laberintos para el aula, actividades infantiles imprimibles, laberintos para cumpleaños, laberintos para eventos, laberintos para libros KDP, laberintos para publicar, generador de puzzles, pasatiempos imprimibles, juegos de ingenio, laberintos en blanco y negro, laberintos personalizables, exportar laberintos a PDF, exportar laberintos PNG SVG, laberintos A4, laberintos por dificultad, laberintos fáciles, laberintos difíciles, laberintos para descargar, creador de laberintos, herramienta para crear laberintos, laberintos con entrada y salida, laberintos para restaurantes, laberintos para cartas de menú, laberintos para bodas, laberintos para comuniones, laberintos para bautizos, laberintos corporativos, laberintos para marcas, maze generator, printable mazes, maze maker online, free maze generator, maze puzzles PDF, printable labyrinth, maze worksheets, custom mazes, labyrinth generator">
+<meta name="description" content="Generador de laberintos masivo online: crea laberintos personalizados (tamaño, colores, inicio y final, solución) y expórtalos gratis en gran cantidad en PDF, PNG, JPG o SVG listos para imprimir.">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  :root{--ink:#111;--paper:#f6f6f4;--line:#e4e4e2;}
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--paper);color:var(--ink)}
+  header{display:flex;align-items:center;gap:10px;padding:12px 20px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+  header h1{font-size:15px;margin:0;font-weight:600;letter-spacing:.02em}
+  header .tag{margin-left:auto;font-size:11px;color:#888;letter-spacing:.12em;text-transform:uppercase;text-decoration:none}
+  .logo{width:20px;height:20px}
+  #langToggle{margin-left:8px;background:#f4f4f4;border:1px solid var(--line);color:var(--ink);border-radius:999px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;letter-spacing:.08em}
+  #langToggle:hover{background:#eee}
+  main{display:grid;grid-template-columns:360px 1fr;height:calc(100vh - 49px)}
+  aside{overflow-y:auto;padding:14px;border-right:1px solid var(--line);background:#fff}
+  .card{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:12px;background:#fff}
+  .card h2{font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:#888;margin:0 0 10px}
+  .row{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;margin:7px 0}
+  .row label{color:#333}
+  input[type=number],select,input[type=text]{border:1px solid #d9d9d9;border-radius:8px;padding:5px 8px;font-size:13px;background:#fff;width:112px}
+  input[type=color]{width:46px;height:28px;border:1px solid #d9d9d9;border-radius:6px;padding:2px;background:#fff}
+  input[type=checkbox]{width:16px;height:16px;accent-color:#111}
+  .btn{appearance:none;border:1px solid #111;background:#111;color:#fff;border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer}
+  .btn:hover{background:#333}
+  .btn:disabled{opacity:.45;cursor:wait}
+  .btn.wide{width:100%;margin-top:8px}
+  .btn.ghost{background:#fff;color:#111;border:1px solid #ccc}
+  .btn.ghost:hover{background:#f2f2f2}
+  .btnrow{display:flex;gap:6px}
+  .btnrow .btn{flex:1;padding:8px 6px}
+  .hint{font-size:11px;color:#999;margin-top:8px}
+  #stage{display:flex;align-items:center;justify-content:center;padding:26px;overflow:auto;background:#ececea}
+  #preview{display:flex;align-items:center;justify-content:center;width:100%;height:100%}
+  #preview svg{display:block;max-width:calc(100% - 10px);max-height:calc(100vh - 120px);width:auto;height:auto;box-shadow:0 10px 34px rgba(0,0,0,.14);border-radius:2px;background:#fff}
+  #progress{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#111;color:#fff;border-radius:999px;padding:9px 16px;display:none;align-items:center;gap:10px;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,.3);font-size:12px}
+  #progress .bar{width:160px;height:4px;background:#444;border-radius:2px;overflow:hidden}
+  #progress .fill{height:100%;width:0%;background:#fff;transition:width .1s}
+
+  /* ===== Cookies ===== */
+  #cookieReopen{position:fixed;right:8px;bottom:8px;z-index:95;border:none;background:transparent;font-size:17px;line-height:1;opacity:.22;filter:grayscale(1);cursor:pointer;transition:opacity .2s,filter .2s;padding:4px}
+  #cookieReopen:hover{opacity:.9;filter:none}
+  #cookieBanner{position:fixed;left:0;right:0;bottom:0;z-index:100;background:#fff;border-top:1px solid var(--line);box-shadow:0 -10px 30px rgba(0,0,0,.14);transform:translateY(110%);transition:transform .3s ease;max-height:70vh;overflow:auto}
+  #cookieBanner.show{transform:translateY(0)}
+  .cb-inner{max-width:960px;margin:0 auto;padding:16px 20px}
+  .cb-inner>p{margin:0 0 8px;font-size:13px;color:#333}
+  .cb-links{margin:0 0 10px;font-size:12px;color:#888}
+  .cb-links a{color:#1a56db;text-decoration:underline;cursor:pointer}
+  .cb-buttons{display:flex;gap:8px;flex-wrap:wrap}
+  #cbPanel{margin-top:12px;border-top:1px dashed #ddd;padding-top:6px}
+  .cb-cat{display:flex;justify-content:space-between;align-items:center;gap:14px;margin:10px 0}
+  .cb-cat strong{font-size:13px}
+  .cb-cat span{display:block;font-size:12px;color:#666}
+  .switch{position:relative;width:40px;height:22px;flex:none}
+  .switch input{opacity:0;width:0;height:0}
+  .slider{position:absolute;inset:0;background:#ccc;border-radius:999px;transition:.2s;cursor:pointer}
+  .slider:before{content:"";position:absolute;width:16px;height:16px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+  .switch input:checked+.slider{background:#111}
+  .switch input:checked+.slider:before{transform:translateX(18px)}
+  .switch input:disabled+.slider{opacity:.5;cursor:not-allowed}
+  #legalModal{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:110;display:flex;align-items:center;justify-content:center;padding:20px}
+  #legalModal[hidden]{display:none}
+  .lm-card{background:#fff;border-radius:14px;max-width:780px;width:100%;max-height:84vh;overflow:auto;padding:20px 26px;position:relative}
+  .lm-close{position:sticky;top:0;float:right;border:none;background:#111;color:#fff;width:28px;height:28px;border-radius:50%;font-size:16px;cursor:pointer;z-index:2}
+  .lm-body h3{margin:18px 0 6px;font-size:15px}
+  .lm-body h4{margin:14px 0 4px;font-size:13px}
+  .lm-body p,.lm-body li{font-size:13px;color:#333}
+  .lm-body table{width:100%;border-collapse:collapse;font-size:12px;margin:8px 0}
+  .lm-body th,.lm-body td{border:1px solid #e2e2e2;padding:6px 8px;text-align:left;vertical-align:top}
+  @media(max-width:900px){main{grid-template-columns:1fr;height:auto}aside{border-right:none;border-bottom:1px solid var(--line)}#stage{min-height:70vh}}
+</style>
+</head>
+<body>
+<header>
+  <svg class="logo" viewBox="0 0 20 20"><path d="M2 2h16v16H2V6h12v8H6V10h4" fill="none" stroke="#111" stroke-width="2"/></svg>
+  <h1 data-i18n="header.title">Generador de Laberintos Masivo</h1>
+  <span class="tag"><a href="https://rubencho80.github.io/" class="tag" target="_blank" data-i18n="header.created">Creado por Rubencho_80</a></span>
+  <button id="langToggle" type="button" title="Change language">EN</button>
+</header>
+<main>
+<aside>
+  <div class="card">
+    <h2 data-i18n="maze.title">Laberinto</h2>
+    <div class="row"><label data-i18n="maze.width">Ancho (celdas)</label><input type="number" id="cols" min="5" max="80" value="20"></div>
+    <div class="row"><label data-i18n="maze.height">Alto (celdas)</label><input type="number" id="rows" min="5" max="80" value="20"></div>
+    <div class="row"><label data-i18n="maze.cellSize">Tamaño de celda (px)</label><input type="number" id="cellSize" min="8" max="40" value="20"></div>
+    <div class="row"><label data-i18n="maze.lineWidth">Grosor de línea</label><input type="number" id="lineWidth" min="0.5" max="12" step="0.5" value="2"></div>
+    <div class="row"><label data-i18n="maze.lineCap">Remate de línea</label><select id="lineCap">
+      <option value="square" data-i18n="maze.capSquare" selected>Cuadrado</option>
+      <option value="round" data-i18n="maze.capRound">Redondeado</option>
+      <option value="butt" data-i18n="maze.capButt">Plano</option>
+    </select></div>
+    <div class="row"><label data-i18n="maze.lineColor">Color del laberinto</label><input type="color" id="lineColor" value="#000000"></div>
+    <div class="row"><label data-i18n="maze.bgColor">Color de fondo</label><input type="color" id="bgColor" value="#ffffff"></div>
+    <div class="row"><label data-i18n="maze.seed">Semilla (opcional)</label><input type="text" id="seed" data-i18n-placeholder="maze.seedPh" placeholder="aleatoria"></div>
+    <button class="btn wide" id="btnRegen" data-i18n="maze.regen">↻ Generar nuevo laberinto</button>
+  </div>
+
+  <div class="card">
+    <h2 data-i18n="se.title">Inicio y final</h2>
+    <div class="row"><label data-i18n="se.start">Inicio</label><select id="startPos">
+      <option value="top-center" selected data-i18n="pos.topCenter">Arriba · centro</option>
+      <option value="top-left" data-i18n="pos.topLeft">Arriba · izquierda</option>
+      <option value="top-right" data-i18n="pos.topRight">Arriba · derecha</option>
+      <option value="right-center" data-i18n="pos.rightCenter">Derecha · centro</option>
+      <option value="bottom-center" data-i18n="pos.bottomCenter">Abajo · centro</option>
+      <option value="bottom-left" data-i18n="pos.bottomLeft">Abajo · izquierda</option>
+      <option value="bottom-right" data-i18n="pos.bottomRight">Abajo · derecha</option>
+      <option value="left-center" data-i18n="pos.leftCenter">Izquierda · centro</option>
+    </select></div>
+    <div class="row"><label data-i18n="se.end">Final</label><select id="endPos">
+      <option value="top-center" data-i18n="pos.topCenter">Arriba · centro</option>
+      <option value="top-left" data-i18n="pos.topLeft">Arriba · izquierda</option>
+      <option value="top-right" data-i18n="pos.topRight">Arriba · derecha</option>
+      <option value="right-center" data-i18n="pos.rightCenter">Derecha · centro</option>
+      <option value="bottom-center" selected data-i18n="pos.bottomCenter">Abajo · centro</option>
+      <option value="bottom-left" data-i18n="pos.bottomLeft">Abajo · izquierda</option>
+      <option value="bottom-right" data-i18n="pos.bottomRight">Abajo · derecha</option>
+      <option value="left-center" data-i18n="pos.leftCenter">Izquierda · centro</option>
+    </select></div>
+    <div class="row"><label data-i18n="se.startArrow">Flecha de inicio</label><input type="checkbox" id="showStartArrow" checked></div>
+    <div class="row"><label data-i18n="se.startArrowColor">Color flecha inicio</label><input type="color" id="startArrowColor" value="#e63946"></div>
+    <div class="row"><label data-i18n="se.endArrow">Flecha de final (extra)</label><input type="checkbox" id="showEndArrow"></div>
+    <div class="row"><label data-i18n="se.endArrowColor">Color flecha final</label><input type="color" id="endArrowColor" value="#2a9d8f"></div>
+    <div class="row"><label data-i18n="se.solution">Mostrar solución (extra)</label><input type="checkbox" id="showSolution"></div>
+    <div class="row"><label data-i18n="se.solutionColor">Color solución</label><input type="color" id="solutionColor" value="#3a86ff"></div>
+  </div>
+
+  <div class="card">
+    <h2 data-i18n="export.title">Exportar actual</h2>
+    <div class="row"><label data-i18n="export.scale">Escala PNG/JPG (×)</label><input type="number" id="exportScale" min="1" max="8" value="3"></div>
+    <div class="btnrow">
+      <button class="btn" id="btnPNG">PNG</button>
+      <button class="btn" id="btnJPG">JPG</button>
+      <button class="btn" id="btnSVG">SVG</button>
+      <button class="btn" id="btnPDF">PDF</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 data-i18n="batch.title">Exportación masiva</h2>
+    <div class="row"><label data-i18n="batch.count">Cantidad</label><input type="number" id="batchCount" min="1" max="500" value="10"></div>
+    <div class="row"><label data-i18n="batch.format">Formato</label><select id="batchFormat">
+      <option value="pdf" selected data-i18n="batch.pdf">PDF (1 por página)</option>
+      <option value="png" data-i18n="batch.png">PNG (ZIP)</option>
+      <option value="jpg" data-i18n="batch.jpg">JPG (ZIP)</option>
+      <option value="svg" data-i18n="batch.svg">SVG (ZIP)</option>
+    </select></div>
+    <button class="btn wide" id="btnBatch" data-i18n="batch.export">⬇ Exportar laberintos</button>
+    <div class="hint" data-i18n="batch.hint">PDF vectorial (rápido y nítido). PNG/JPG/SVG se descargan en ZIP.</div>
+  </div>
+
+  <div class="card">
+    <h2 data-i18n="pdf.title">Opciones de PDF</h2>
+    <div class="row"><label data-i18n="pdf.pageSize">Tamaño de hoja</label><select id="pdfFormat">
+      <option value="a4" selected>A4</option>
+      <option value="a3">A3</option>
+      <option value="a5">A5</option>
+      <option value="letter" data-i18n="pdf.letter">Carta</option>
+      <option value="legal">Legal</option>
+      <option value="custom" data-i18n="pdf.custom">Personalizado</option>
+    </select></div>
+    <div class="row" id="customSizeRow" style="display:none"><label data-i18n="pdf.wXh">Ancho × alto (mm)</label>
+      <div><input type="number" id="customW" value="210" style="width:54px"> × <input type="number" id="customH" value="297" style="width:54px"></div></div>
+    <div class="row"><label data-i18n="pdf.orientation">Orientación</label><select id="pdfOrientation">
+      <option value="p" selected data-i18n="pdf.portrait">Vertical</option>
+      <option value="l" data-i18n="pdf.landscape">Horizontal</option>
+    </select></div>
+    <div class="row"><label data-i18n="pdf.position">Ubicación</label><select id="pdfPosition">
+      <option value="center" selected data-i18n="pdf.center">Centro</option>
+      <option value="top" data-i18n="pdf.top">Arriba</option>
+      <option value="bottom" data-i18n="pdf.bottom">Abajo</option>
+      <option value="exact" data-i18n="pdf.exact">Coordenadas exactas</option>
+    </select></div>
+    <div class="row" id="xyRow" style="display:none"><label>X · Y (mm)</label>
+      <div><input type="number" id="pdfX" value="20" style="width:54px"> , <input type="number" id="pdfY" value="20" style="width:54px"></div></div>
+    <div class="row"><label data-i18n="pdf.sizeInPage">Tamaño en hoja</label>
+      <div style="display:flex;gap:6px;align-items:center"><input type="number" id="pdfSize" value="80" style="width:60px">
+      <select id="pdfSizeMode" style="width:82px">
+        <option value="pct" selected data-i18n="pdf.pctW">% ancho</option>
+        <option value="mm" data-i18n="pdf.mmW">mm ancho</option>
+      </select></div></div>
+  </div>
+</aside>
+<section id="stage"><div id="preview"></div></section>
+</main>
+<div id="progress"><div class="bar"><div class="fill" id="progressFill"></div></div><span id="progressText">0/0</span></div>
+
+<!-- ===== Botón reabrir cookies ===== -->
+<button id="cookieReopen" title="Cookie settings" aria-label="Cookie settings">🍪</button>
+
+<!-- ===== Banner de cookies ===== -->
+<div id="cookieBanner" role="dialog" aria-label="Cookie consent">
+  <div class="cb-inner">
+    <p data-i18n-html="cookie.intro"></p>
+    <div class="cb-links"><a id="linkCookies" data-i18n="cookie.policy">Política de cookies</a> · <a id="linkPriv" data-i18n="cookie.privacy">Aviso de privacidad</a></div>
+    <div class="cb-buttons">
+      <button class="btn ghost" id="cbConfig" data-i18n="cookie.configure">Configurar</button>
+      <button class="btn ghost" id="cbReject" data-i18n="cookie.reject">Rechazar todas</button>
+      <button class="btn" id="cbAccept" data-i18n="cookie.accept">Aceptar todas</button>
+    </div>
+    <div id="cbPanel" hidden>
+      <div class="cb-cat">
+        <div><strong data-i18n="cookie.necessary">Técnicas / necesarias</strong><span data-i18n="cookie.necessaryDesc">Imprescindibles para que la app funcione y recuerde tus ajustes y tu decisión de cookies. No se pueden desactivar.</span></div>
+        <label class="switch"><input type="checkbox" checked disabled><span class="slider"></span></label>
+      </div>
+      <div class="cb-cat">
+        <div><strong data-i18n="cookie.analytics">Analíticas (Google Analytics)</strong><span data-i18n="cookie.analyticsDesc">Estadísticas anónimas de uso para mejorar el sitio.</span></div>
+        <label class="switch"><input type="checkbox" id="swAnalytics"><span class="slider"></span></label>
+      </div>
+      <div class="cb-buttons"><button class="btn" id="cbSave" data-i18n="cookie.save">Guardar selección</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Modal legal ===== -->
+<div id="legalModal" hidden>
+  <div class="lm-card">
+    <button class="lm-close" id="lmClose" aria-label="Close">×</button>
+    <div class="lm-body">
+      <h3 id="secCookies" data-i18n="legal.cookiesTitle">Política de cookies</h3>
+      <p data-i18n="legal.cookiesIntro">Una cookie es un pequeño archivo que se almacena en tu dispositivo al visitar un sitio web. Esta herramienta usa almacenamiento local de tu navegador con las siguientes finalidades:</p>
+      <table>
+        <tr><th data-i18n="legal.colName">Nombre</th><th data-i18n="legal.colType">Tipo</th><th data-i18n="legal.colPurpose">Finalidad</th><th data-i18n="legal.colDuration">Duración</th></tr>
+        <tr><td>laberintos_cfg_v1</td><td data-i18n="legal.ownTech">Propia / técnica</td><td data-i18n="legal.purpCfg">Guarda tus ajustes del generador (tamaños, colores, opciones de exportación y PDF).</td><td data-i18n="legal.durClear">Hasta que borres los datos del sitio.</td></tr>
+        <tr><td>laberintos_consent_v1</td><td data-i18n="legal.ownTech">Propia / técnica</td><td data-i18n="legal.purpConsent">Recuerda tu decisión sobre el uso de cookies.</td><td data-i18n="legal.durClear">Hasta que borres los datos del sitio.</td></tr>
+        <tr><td>_ga, _ga_*</td><td data-i18n="legal.thirdGA">Tercero (Google Analytics)</td><td data-i18n="legal.purpGA">Análisis estadístico anónimo del uso del sitio. IP anonimizada.</td><td data-i18n-html="legal.durGA">Hasta 2 años. <strong>Solo si aceptas las analíticas.</strong></td></tr>
+      </table>
+      <h4 data-i18n="legal.manageTitle">Gestión del consentimiento</h4>
+      <p data-i18n="legal.manageText">Puedes aceptar, rechazar o configurar las cookies en el panel inferior, y modificar tu elección en cualquier momento pulsando el botón 🍪 de la esquina inferior derecha. También puedes eliminar el almacenamiento local desde los ajustes de tu navegador cuando quieras.</p>
+      <h4 data-i18n="legal.intlTitle">Transferencias internacionales</h4>
+      <p data-i18n-html="legal.intlText">Google Analytics puede tratar datos fuera del Espacio Económico Europeo. Google dispone de cláusulas contractuales tipo aprobadas por la UE. Más información: <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Política de privacidad de Google</a>.</p>
+
+      <h3 id="secPriv" data-i18n="legal.privacyTitle">Aviso de privacidad</h3>
+      <p data-i18n-html="legal.resp">Responsable del tratamiento: Rubén Valverde · Contacto: ruben.valverde.arana@gmail.com.</p>
+      <p data-i18n="legal.purpAndLeg">Finalidad y legitimación: esta herramienta funciona íntegramente en tu navegador: los laberintos y tus ajustes no se envían a nuestros servidores. Únicamente se tratan datos estadísticos de uso mediante Google Analytics si has otorgado tu consentimiento (art. 6.1.a RGPD), que puedes retirar en cualquier momento con el mismo efecto.</p>
+      <p data-i18n-html="legal.rights">Tus derechos: puedes ejercer los derechos de acceso, rectificación, supresión, oposición, limitación y portabilidad escribiendo a ruben.valverde.arana@gmail.com. Asimismo, tienes derecho a presentar una reclamación ante la Agencia Española de Protección de Datos (<a href="https://www.aepd.es" target="_blank" rel="noopener">www.aepd.es</a>).</p>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== Sistema i18n ===== */
+const I18N = {
+  es: {
+    "header.title": "Generador de Laberintos Masivo",
+    "header.created": "Creado por Rubencho_80",
+    "langToggle": "EN",
+
+    "maze.title": "Laberinto",
+    "maze.width": "Ancho (celdas)",
+    "maze.height": "Alto (celdas)",
+    "maze.cellSize": "Tamaño de celda (px)",
+    "maze.lineWidth": "Grosor de línea",
+    "maze.lineCap": "Remate de línea",
+    "maze.capSquare": "Cuadrado",
+    "maze.capRound": "Redondeado",
+    "maze.capButt": "Plano",
+    "maze.lineColor": "Color del laberinto",
+    "maze.bgColor": "Color de fondo",
+    "maze.seed": "Semilla (opcional)",
+    "maze.seedPh": "aleatoria",
+    "maze.regen": "↻ Generar nuevo laberinto",
+
+    "se.title": "Inicio y final",
+    "se.start": "Inicio",
+    "se.end": "Final",
+    "se.startArrow": "Flecha de inicio",
+    "se.startArrowColor": "Color flecha inicio",
+    "se.endArrow": "Flecha de final (extra)",
+    "se.endArrowColor": "Color flecha final",
+    "se.solution": "Mostrar solución (extra)",
+    "se.solutionColor": "Color solución",
+
+    "pos.topCenter": "Arriba · centro",
+    "pos.topLeft": "Arriba · izquierda",
+    "pos.topRight": "Arriba · derecha",
+    "pos.rightCenter": "Derecha · centro",
+    "pos.bottomCenter": "Abajo · centro",
+    "pos.bottomLeft": "Abajo · izquierda",
+    "pos.bottomRight": "Abajo · derecha",
+    "pos.leftCenter": "Izquierda · centro",
+
+    "export.title": "Exportar actual",
+    "export.scale": "Escala PNG/JPG (×)",
+
+    "batch.title": "Exportación masiva",
+    "batch.count": "Cantidad",
+    "batch.format": "Formato",
+    "batch.pdf": "PDF (1 por página)",
+    "batch.png": "PNG (ZIP)",
+    "batch.jpg": "JPG (ZIP)",
+    "batch.svg": "SVG (ZIP)",
+    "batch.export": "⬇ Exportar laberintos",
+    "batch.hint": "PDF vectorial (rápido y nítido). PNG/JPG/SVG se descargan en ZIP.",
+
+    "pdf.title": "Opciones de PDF",
+    "pdf.pageSize": "Tamaño de hoja",
+    "pdf.letter": "Carta",
+    "pdf.custom": "Personalizado",
+    "pdf.wXh": "Ancho × alto (mm)",
+    "pdf.orientation": "Orientación",
+    "pdf.portrait": "Vertical",
+    "pdf.landscape": "Horizontal",
+    "pdf.position": "Ubicación",
+    "pdf.center": "Centro",
+    "pdf.top": "Arriba",
+    "pdf.bottom": "Abajo",
+    "pdf.exact": "Coordenadas exactas",
+    "pdf.sizeInPage": "Tamaño en hoja",
+    "pdf.pctW": "% ancho",
+    "pdf.mmW": "mm ancho",
+
+    "cookie.intro": "Utilizamos <strong>cookies técnicas propias</strong> (necesarias para recordar tus ajustes) y, solo con tu consentimiento, <strong>cookies analíticas de Google Analytics</strong> para medir el uso del sitio de forma anónima. Puedes aceptarlas, rechazarlas o configurarlas, y cambiar tu decisión en cualquier momento desde el botón 🍪 de la esquina inferior derecha.",
+    "cookie.policy": "Política de cookies",
+    "cookie.privacy": "Aviso de privacidad",
+    "cookie.configure": "Configurar",
+    "cookie.reject": "Rechazar todas",
+    "cookie.accept": "Aceptar todas",
+    "cookie.necessary": "Técnicas / necesarias",
+    "cookie.necessaryDesc": "Imprescindibles para que la app funcione y recuerde tus ajustes y tu decisión de cookies. No se pueden desactivar.",
+    "cookie.analytics": "Analíticas (Google Analytics)",
+    "cookie.analyticsDesc": "Estadísticas anónimas de uso para mejorar el sitio.",
+    "cookie.save": "Guardar selección",
+
+    "legal.cookiesTitle": "Política de cookies",
+    "legal.cookiesIntro": "Una cookie es un pequeño archivo que se almacena en tu dispositivo al visitar un sitio web. Esta herramienta usa almacenamiento local de tu navegador con las siguientes finalidades:",
+    "legal.colName": "Nombre",
+    "legal.colType": "Tipo",
+    "legal.colPurpose": "Finalidad",
+    "legal.colDuration": "Duración",
+    "legal.ownTech": "Propia / técnica",
+    "legal.thirdGA": "Tercero (Google Analytics)",
+    "legal.purpCfg": "Guarda tus ajustes del generador (tamaños, colores, opciones de exportación y PDF).",
+    "legal.purpConsent": "Recuerda tu decisión sobre el uso de cookies.",
+    "legal.purpGA": "Análisis estadístico anónimo del uso del sitio. IP anonimizada.",
+    "legal.durClear": "Hasta que borres los datos del sitio.",
+    "legal.durGA": "Hasta 2 años. <strong>Solo si aceptas las analíticas.</strong>",
+    "legal.manageTitle": "Gestión del consentimiento",
+    "legal.manageText": "Puedes aceptar, rechazar o configurar las cookies en el panel inferior, y modificar tu elección en cualquier momento pulsando el botón 🍪 de la esquina inferior derecha. También puedes eliminar el almacenamiento local desde los ajustes de tu navegador cuando quieras.",
+    "legal.intlTitle": "Transferencias internacionales",
+    "legal.intlText": "Google Analytics puede tratar datos fuera del Espacio Económico Europeo. Google dispone de cláusulas contractuales tipo aprobadas por la UE. Más información: <a href=\"https://policies.google.com/privacy\" target=\"_blank\" rel=\"noopener\">Política de privacidad de Google</a>.",
+    "legal.privacyTitle": "Aviso de privacidad",
+    "legal.resp": "<strong>Responsable del tratamiento:</strong> Rubén Valverde · Contacto: ruben.valverde.arana@gmail.com.",
+    "legal.purpAndLeg": "Finalidad y legitimación: esta herramienta funciona íntegramente en tu navegador: los laberintos y tus ajustes no se envían a nuestros servidores. Únicamente se tratan datos estadísticos de uso mediante Google Analytics si has otorgado tu consentimiento (art. 6.1.a RGPD), que puedes retirar en cualquier momento con el mismo efecto.",
+    "legal.rights": "<strong>Tus derechos:</strong> puedes ejercer los derechos de acceso, rectificación, supresión, oposición, limitación y portabilidad escribiendo a ruben.valverde.arana@gmail.com. Asimismo, tienes derecho a presentar una reclamación ante la Agencia Española de Protección de Datos (<a href=\"https://www.aepd.es\" target=\"_blank\" rel=\"noopener\">www.aepd.es</a>).",
+
+    "misc.libsError": "No se pudieron cargar las librerías (requiere conexión a internet).",
+    "misc.batchError": "Error durante la exportación: ",
+    "misc.initError": "Error al iniciar: "
+  },
+  en: {
+    "header.title": "Massive Maze Generator",
+    "header.created": "Created by Rubencho_80",
+    "langToggle": "ES",
+
+    "maze.title": "Maze",
+    "maze.width": "Width (cells)",
+    "maze.height": "Height (cells)",
+    "maze.cellSize": "Cell size (px)",
+    "maze.lineWidth": "Line width",
+    "maze.lineCap": "Line cap",
+    "maze.capSquare": "Square",
+    "maze.capRound": "Rounded",
+    "maze.capButt": "Butt",
+    "maze.lineColor": "Maze color",
+    "maze.bgColor": "Background color",
+    "maze.seed": "Seed (optional)",
+    "maze.seedPh": "random",
+    "maze.regen": "↻ Generate new maze",
+
+    "se.title": "Start and end",
+    "se.start": "Start",
+    "se.end": "End",
+    "se.startArrow": "Start arrow",
+    "se.startArrowColor": "Start arrow color",
+    "se.endArrow": "End arrow (extra)",
+    "se.endArrowColor": "End arrow color",
+    "se.solution": "Show solution (extra)",
+    "se.solutionColor": "Solution color",
+
+    "pos.topCenter": "Top · center",
+    "pos.topLeft": "Top · left",
+    "pos.topRight": "Top · right",
+    "pos.rightCenter": "Right · center",
+    "pos.bottomCenter": "Bottom · center",
+    "pos.bottomLeft": "Bottom · left",
+    "pos.bottomRight": "Bottom · right",
+    "pos.leftCenter": "Left · center",
+
+    "export.title": "Export current",
+    "export.scale": "PNG/JPG scale (×)",
+
+    "batch.title": "Batch export",
+    "batch.count": "Quantity",
+    "batch.format": "Format",
+    "batch.pdf": "PDF (1 per page)",
+    "batch.png": "PNG (ZIP)",
+    "batch.jpg": "JPG (ZIP)",
+    "batch.svg": "SVG (ZIP)",
+    "batch.export": "⬇ Export mazes",
+    "batch.hint": "Vector PDF (fast and sharp). PNG/JPG/SVG download as ZIP.",
+
+    "pdf.title": "PDF options",
+    "pdf.pageSize": "Page size",
+    "pdf.letter": "Letter",
+    "pdf.custom": "Custom",
+    "pdf.wXh": "Width × height (mm)",
+    "pdf.orientation": "Orientation",
+    "pdf.portrait": "Portrait",
+    "pdf.landscape": "Landscape",
+    "pdf.position": "Position",
+    "pdf.center": "Center",
+    "pdf.top": "Top",
+    "pdf.bottom": "Bottom",
+    "pdf.exact": "Exact coordinates",
+    "pdf.sizeInPage": "Size in page",
+    "pdf.pctW": "% width",
+    "pdf.mmW": "mm width",
+
+    "cookie.intro": "We use <strong>first-party technical cookies</strong> (required to remember your settings) and, only with your consent, <strong>Google Analytics cookies</strong> to measure site usage anonymously. You can accept, reject or configure them, and change your decision at any time from the 🍪 button in the bottom-right corner.",
+    "cookie.policy": "Cookie policy",
+    "cookie.privacy": "Privacy notice",
+    "cookie.configure": "Configure",
+    "cookie.reject": "Reject all",
+    "cookie.accept": "Accept all",
+    "cookie.necessary": "Necessary",
+    "cookie.necessaryDesc": "Required for the app to work and to remember your settings and cookie choice. Cannot be disabled.",
+    "cookie.analytics": "Analytics (Google Analytics)",
+    "cookie.analyticsDesc": "Anonymous usage statistics to improve the site.",
+    "cookie.save": "Save selection",
+
+    "legal.cookiesTitle": "Cookie policy",
+    "legal.cookiesIntro": "A cookie is a small file stored on your device when you visit a website. This tool uses your browser's local storage for the following purposes:",
+    "legal.colName": "Name",
+    "legal.colType": "Type",
+    "legal.colPurpose": "Purpose",
+    "legal.colDuration": "Duration",
+    "legal.ownTech": "First-party / technical",
+    "legal.thirdGA": "Third-party (Google Analytics)",
+    "legal.purpCfg": "Stores your generator settings (sizes, colors, export and PDF options).",
+    "legal.purpConsent": "Remembers your cookie choice.",
+    "legal.purpGA": "Anonymous statistical analysis of site usage. IP anonymized.",
+    "legal.durClear": "Until you clear the site data.",
+    "legal.durGA": "Up to 2 years. <strong>Only if you accept analytics.</strong>",
+    "legal.manageTitle": "Consent management",
+    "legal.manageText": "You can accept, reject or configure cookies in the bottom panel, and change your choice at any time by clicking the 🍪 button in the bottom-right corner. You can also clear the local storage from your browser settings anytime.",
+    "legal.intlTitle": "International transfers",
+    "legal.intlText": "Google Analytics may process data outside the European Economic Area. Google relies on EU-approved standard contractual clauses. More information: <a href=\"https://policies.google.com/privacy\" target=\"_blank\" rel=\"noopener\">Google Privacy Policy</a>.",
+    "legal.privacyTitle": "Privacy notice",
+    "legal.resp": "<strong>Data controller:</strong> Rubén Valverde · Contact: ruben.valverde.arana@gmail.com.",
+    "legal.purpAndLeg": "Purpose and legal basis: this tool runs entirely in your browser — mazes and settings are never sent to our servers. Only usage statistics via Google Analytics are processed if you give your consent (art. 6.1.a GDPR), which you can withdraw at any time with the same effect.",
+    "legal.rights": "<strong>Your rights:</strong> you may exercise your rights of access, rectification, erasure, objection, restriction and portability by writing to ruben.valverde.arana@gmail.com. You also have the right to lodge a complaint with the Spanish Data Protection Agency (<a href=\"https://www.aepd.es\" target=\"_blank\" rel=\"noopener\">www.aepd.es</a>).",
+
+    "misc.libsError": "Could not load the libraries (internet connection required).",
+    "misc.batchError": "Error during export: ",
+    "misc.initError": "Startup error: "
+  }
+};
+
+const LANG_KEY = 'laberintos_lang_v1';
+let currentLang = 'es';
+
+function detectLang(){
+  try { const saved = localStorage.getItem(LANG_KEY); if (saved && I18N[saved]) return saved; } catch(e){}
+  const nav = (navigator.language || 'es').slice(0,2).toLowerCase();
+  return I18N[nav] ? nav : 'es';
+}
+
+function applyLang(lang){
+  currentLang = lang;
+  document.documentElement.lang = lang;
+  try { localStorage.setItem(LANG_KEY, lang); } catch(e){}
+  const dict = I18N[lang];
+  // textContent
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.getAttribute('data-i18n');
+    if (dict[k] !== undefined) {
+      // Preserve selected option when changing option text
+      if (el.tagName === 'OPTION') el.textContent = dict[k];
+      else el.textContent = dict[k];
+    }
+  });
+  // innerHTML (textos con marcado: negritas, enlaces)
+  document.querySelectorAll('[data-i18n-html]').forEach(el => {
+    const k = el.getAttribute('data-i18n-html');
+    if (dict[k] !== undefined) el.innerHTML = dict[k];
+  });
+  // placeholders
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const k = el.getAttribute('data-i18n-placeholder');
+    if (dict[k] !== undefined) el.placeholder = dict[k];
+  });
+  // title del botón idioma (muestra el idioma ALTERNATIVO al actual)
+  const toggle = document.getElementById('langToggle');
+  if (toggle) toggle.textContent = dict['langToggle'];
+}
+
+/* ===== Fin i18n ===== */
+
+const $=id=>document.getElementById(id);
+const tick=()=>new Promise(r=>setTimeout(r,0));
+const clampNum=(v,a,b)=>Math.min(b,Math.max(a,parseFloat(v)||a));
+const clampInt=(v,a,b)=>Math.round(clampNum(v,a,b));
+const state={maze:null,randSeed:(Math.random()*4294967296)>>>0,nonce:0};
+
+/* ---------- Persistencia de ajustes ---------- */
+const LS_KEY='laberintos_cfg_v1';
+function saveSettings(){
+  const data={};
+  document.querySelectorAll('aside input, aside select').forEach(el=>{
+    data[el.id]=el.type==='checkbox'?el.checked:el.value;
+  });
+  try{localStorage.setItem(LS_KEY,JSON.stringify(data));}catch(e){}
+}
+function loadSettings(){
+  try{
+    const d=JSON.parse(localStorage.getItem(LS_KEY)||'null');if(!d)return;
+    document.querySelectorAll('aside input, aside select').forEach(el=>{
+      if(d[el.id]!==undefined){ if(el.type==='checkbox')el.checked=!!d[el.id]; else el.value=d[el.id]; }
+    });
+  }catch(e){}
+}
+let saveT;const scheduleSave=()=>{clearTimeout(saveT);saveT=setTimeout(saveSettings,250);};
+window.addEventListener('beforeunload',saveSettings);
+
+/* ---------- RNG con semilla ---------- */
+function xmur3(str){let h=1779033703^str.length;for(let i=0;i<str.length;i++){h=Math.imul(h^str.charCodeAt(i),3432918353);h=h<<13|h>>>19;}return()=>{h=Math.imul(h^(h>>>16),2246822507);h=Math.imul(h^(h>>>13),3266489909);return(h^=h>>>16)>>>0;};}
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+
+/* ---------- Configuración ---------- */
+function readCfg(){return{
+  cols:clampInt($('cols').value,5,80),rows:clampInt($('rows').value,5,80),
+  cell:clampNum($('cellSize').value,8,40),lw:clampNum($('lineWidth').value,0.5,12),
+  cap:$('lineCap').value,lineColor:$('lineColor').value,bg:$('bgColor').value,
+  start:$('startPos').value,end:$('endPos').value,
+  showStartArrow:$('showStartArrow').checked,startArrowColor:$('startArrowColor').value,
+  showEndArrow:$('showEndArrow').checked,endArrowColor:$('endArrowColor').value,
+  showSolution:$('showSolution').checked,solutionColor:$('solutionColor').value,
+  exportScale:clampNum($('exportScale').value,1,8),
+  pdfFormat:$('pdfFormat').value,customW:clampNum($('customW').value,70,1000),customH:clampNum($('customH').value,70,1000),
+  pdfOrientation:$('pdfOrientation').value,pdfPosition:$('pdfPosition').value,
+  pdfX:parseFloat($('pdfX').value)||0,pdfY:parseFloat($('pdfY').value)||0,
+  pdfSize:clampNum($('pdfSize').value,5,200),pdfSizeMode:$('pdfSizeMode').value
+};}
+
+/* ---------- Aperturas ---------- */
+function openingInfo(pos,cols,rows){
+  const mx=Math.floor(cols/2),my=Math.floor(rows/2);
+  switch(pos){
+    case 'top-center':   return{cell:mx,bit:1,pt:[mx+.5,0],dir:[0,1]};
+    case 'top-left':     return{cell:0,bit:1,pt:[.5,0],dir:[0,1]};
+    case 'top-right':    return{cell:cols-1,bit:1,pt:[cols-.5,0],dir:[0,1]};
+    case 'bottom-center':return{cell:(rows-1)*cols+mx,bit:4,pt:[mx+.5,rows],dir:[0,-1]};
+    case 'bottom-left':  return{cell:(rows-1)*cols,bit:4,pt:[.5,rows],dir:[0,-1]};
+    case 'bottom-right': return{cell:(rows-1)*cols+cols-1,bit:4,pt:[cols-.5,rows],dir:[0,-1]};
+    case 'left-center':  return{cell:my*cols,bit:8,pt:[0,my+.5],dir:[1,0]};
+    case 'right-center': return{cell:my*cols+cols-1,bit:2,pt:[cols,my+.5],dir:[-1,0]};
+  }
+}
+
+/* ---------- Generación ---------- */
+function generateMaze(cfg,seed){
+  const rnd=mulberry32(seed>>>0),{cols,rows}=cfg;
+  const walls=new Uint8Array(cols*rows).fill(15),vis=new Uint8Array(cols*rows);
+  const stack=[0];vis[0]=1;
+  while(stack.length){
+    const cur=stack[stack.length-1],x=cur%cols,y=(cur/cols)|0,nbs=[];
+    if(y>0&&!vis[cur-cols])nbs.push([cur-cols,1,4]);
+    if(x<cols-1&&!vis[cur+1])nbs.push([cur+1,2,8]);
+    if(y<rows-1&&!vis[cur+cols])nbs.push([cur+cols,4,1]);
+    if(x>0&&!vis[cur-1])nbs.push([cur-1,8,2]);
+    if(!nbs.length){stack.pop();continue;}
+    const[n,a,b]=nbs[(rnd()*nbs.length)|0];
+    walls[cur]&=~a;walls[n]&=~b;vis[n]=1;stack.push(n);
+  }
+  const so=openingInfo(cfg.start,cols,rows),eo=openingInfo(cfg.end,cols,rows);
+  walls[so.cell]&=~so.bit;walls[eo.cell]&=~eo.bit;
+  return{cols,rows,walls,start:so,end:eo};
+}
+
+/* ---------- Solución ---------- */
+function solve(m){
+  const{cols,rows,walls}=m,s=m.start.cell,e=m.end.cell;
+  const prev=new Int32Array(cols*rows).fill(-2),q=[s];prev[s]=-1;
+  for(let h=0;h<q.length;h++){const cur=q[h];if(cur===e)break;
+    if(!(walls[cur]&1)&&prev[cur-cols]===-2){prev[cur-cols]=cur;q.push(cur-cols);}
+    if(!(walls[cur]&2)&&prev[cur+1]===-2){prev[cur+1]=cur;q.push(cur+1);}
+    if(!(walls[cur]&4)&&prev[cur+cols]===-2){prev[cur+cols]=cur;q.push(cur+cols);}
+    if(!(walls[cur]&8)&&prev[cur-1]===-2){prev[cur-1]=cur;q.push(cur-1);}
+  }
+  const path=[];let cur=e;while(cur!==-1){path.push(cur);cur=prev[cur];}path.reverse();
+  const pts=path.map(i=>[(i%cols)+.5,((i/cols)|0)+.5]);
+  pts.unshift(m.start.pt);pts.push(m.end.pt);return pts;
+}
+
+/* ---------- Geometría compartida ---------- */
+function dims(m,cfg){const pad=Math.ceil(Math.max(cfg.cell*1.35,cfg.lw*4));return{W:m.cols*cfg.cell+pad*2,H:m.rows*cfg.cell+pad*2,pad};}
+function geometry(m,cfg){
+  const cell=cfg.cell,{W,H,pad}=dims(m,cfg),segs=[];
+  for(let y=0;y<m.rows;y++)for(let x=0;x<m.cols;x++){
+    const w=m.walls[y*m.cols+x],X=pad+x*cell,Y=pad+y*cell;
+    if(w&1)segs.push([X,Y,X+cell,Y]);
+    if(w&8)segs.push([X,Y,X,Y+cell]);
+    if(x===m.cols-1&&(w&2))segs.push([X+cell,Y,X+cell,Y+cell]);
+    if(y===m.rows-1&&(w&4))segs.push([X,Y+cell,X+cell,Y+cell]);
+  }
+  let solPts=null;
+  if(cfg.showSolution)solPts=solve(m).map(p=>[pad+p[0]*cell,pad+p[1]*cell]);
+  function arrowGeom(info,flip){
+    const ox=pad+info.pt[0]*cell,oy=pad+info.pt[1]*cell;
+    const ux=-info.dir[0],uy=-info.dir[1],px=-info.dir[1],py=info.dir[0],hw=cell*.26;
+    const P=d=>[ox+ux*cell*d,oy+uy*cell*d];
+    let shaft,head;
+    if(!flip){const t=P(.12),b=P(.5),tl=P(.95);
+      shaft=[tl[0],tl[1],b[0],b[1]];
+      head=[t[0],t[1],b[0]+px*hw,b[1]+py*hw,b[0]-px*hw,b[1]-py*hw];
+    }else{const tl=P(.12),b=P(.55),t=P(.95);
+      shaft=[tl[0],tl[1],b[0],b[1]];
+      head=[t[0],t[1],b[0]+px*hw,b[1]+py*hw,b[0]-px*hw,b[1]-py*hw];
+    }
+    return{shaft,head,aw:Math.max(cfg.lw,cell*.12)};
+  }
+  const arrows=[];
+  if(cfg.showStartArrow)arrows.push(Object.assign(arrowGeom(m.start,false),{color:cfg.startArrowColor}));
+  if(cfg.showEndArrow)arrows.push(Object.assign(arrowGeom(m.end,true),{color:cfg.endArrowColor}));
+  return{W,H,segs,solPts,arrows};
+}
+function buildSVG(m,cfg,scale=1,forExport=false){
+  const g=geometry(m,cfg),f=n=>+n.toFixed(2);
+  let d='';for(const s of g.segs)d+=`M${s[0]} ${s[1]}L${s[2]} ${s[3]}`;
+  let sol='';
+  if(g.solPts)sol=`<path d="M${g.solPts.map(p=>f(p[0])+' '+f(p[1])).join('L')}" fill="none" stroke="${cfg.solutionColor}" stroke-width="${f(Math.max(1,cfg.lw*.9))}" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>`;
+  let arrows='';
+  for(const a of g.arrows){
+    arrows+=`<path d="M${f(a.shaft[0])} ${f(a.shaft[1])}L${f(a.shaft[2])} ${f(a.shaft[3])}" stroke="${a.color}" stroke-width="${f(a.aw)}" stroke-linecap="round"/>`+
+            `<polygon points="${a.head.map(f).join(',')}" fill="${a.color}"/>`;
+  }
+  const sizeAttr=forExport?`width="${Math.round(g.W*scale)}" height="${Math.round(g.H*scale)}" `:'';
+  return `<svg xmlns="http://www.w3.org/2000/svg" ${sizeAttr}viewBox="0 0 ${g.W} ${g.H}"><rect width="${g.W}" height="${g.H}" fill="${cfg.bg}"/>${sol}<path d="${d}" fill="none" stroke="${cfg.lineColor}" stroke-width="${cfg.lw}" stroke-linecap="${cfg.cap}"/>${arrows}</svg>`;
+}
+
+/* ---------- Exportación ---------- */
+function rasterize(svgStr,W,H,scale,mime='image/png',quality=0.92){
+  return new Promise((res,rej)=>{
+    const url=URL.createObjectURL(new Blob([svgStr],{type:'image/svg+xml'}));
+    const img=new Image();
+    img.onload=()=>{const c=document.createElement('canvas');c.width=Math.round(W*scale);c.height=Math.round(H*scale);
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      c.toBlob(b=>{URL.revokeObjectURL(url);res(b);},mime,quality);};
+    img.onerror=e=>{URL.revokeObjectURL(url);rej(e);};
+    img.src=url;
+  });
+}
+function downloadBlob(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000);}
+async function mapPool(count,worker,conc){
+  let i=0;
+  const ws=Array.from({length:Math.min(conc,count)},async()=>{
+    while(true){const j=i++;if(j>=count)break;await worker(j);}
+  });
+  await Promise.all(ws);
+}
+function hexRGB(h){h=h.replace('#','');if(h.length===3)h=h.split('').map(c=>c+c).join('');const n=parseInt(h,16);return[n>>16&255,n>>8&255,n&255];}
+const CAPS={butt:0,round:1,square:2};
+
+const SIZES={a4:[210,297],a3:[297,420],a5:[148,210],letter:[216,279],legal:[216,356]};
+function pageSize(cfg){let[w,h]=SIZES[cfg.pdfFormat]||[210,297];
+  if(cfg.pdfFormat==='custom'){w=cfg.customW;h=cfg.customH;}
+  if(cfg.pdfOrientation==='l'&&h>w)[w,h]=[h,w];
+  if(cfg.pdfOrientation==='p'&&w>h)[w,h]=[h,w];
+  return{w,h};}
+
+async function buildPDF(mazes,cfg,filename){
+  const page=pageSize(cfg),{jsPDF}=window.jspdf;
+  const orient=page.w>page.h?'landscape':'portrait';
+  const doc=new jsPDF({unit:'mm',format:[page.w,page.h],orientation:orient,compress:true});
+  for(let i=0;i<mazes.length;i++){
+    if(i)doc.addPage([page.w,page.h],orient);
+    const g=geometry(mazes[i],cfg);
+    let wmm=cfg.pdfSizeMode==='mm'?cfg.pdfSize:page.w*cfg.pdfSize/100;
+    wmm=Math.min(wmm,page.w);
+    const hmm=wmm*g.H/g.W;let x,y;
+    if(cfg.pdfPosition==='top'){x=(page.w-wmm)/2;y=0;}
+    else if(cfg.pdfPosition==='bottom'){x=(page.w-wmm)/2;y=page.h-hmm;}
+    else if(cfg.pdfPosition==='exact'){x=cfg.pdfX;y=cfg.pdfY;}
+    else{x=(page.w-wmm)/2;y=(page.h-hmm)/2;}
+    const k=wmm/g.W;
+    const bg=hexRGB(cfg.bg);doc.setFillColor(bg[0],bg[1],bg[2]);doc.rect(x,y,wmm,hmm,'F');
+    if(g.solPts&&g.solPts.length>1){
+      const sc=hexRGB(cfg.solutionColor);
+      doc.setDrawColor(sc[0],sc[1],sc[2]);doc.setLineWidth(k*Math.max(1,cfg.lw*.9));doc.setLineCap(1);doc.setLineJoin(1);
+      const rel=g.solPts.slice(1).map((p,j)=>[p[0]-g.solPts[j][0],p[1]-g.solPts[j][1]]);
+      doc.lines(rel,x+k*g.solPts[0][0],y+k*g.solPts[0][1],[k,k],'S',false);
+    }
+    const lc=hexRGB(cfg.lineColor);
+    doc.setDrawColor(lc[0],lc[1],lc[2]);doc.setLineWidth(k*cfg.lw);doc.setLineCap(CAPS[cfg.cap]??2);doc.setLineJoin(0);
+    for(const s of g.segs)doc.line(x+k*s[0],y+k*s[1],x+k*s[2],y+k*s[3]);
+    for(const a of g.arrows){
+      const c=hexRGB(a.color);
+      doc.setDrawColor(c[0],c[1],c[2]);doc.setFillColor(c[0],c[1],c[2]);doc.setLineWidth(k*a.aw);doc.setLineCap(1);
+      doc.line(x+k*a.shaft[0],y+k*a.shaft[1],x+k*a.shaft[2],y+k*a.shaft[3]);
+      doc.triangle(x+k*a.head[0],y+k*a.head[1],x+k*a.head[2],y+k*a.head[3],x+k*a.head[4],y+k*a.head[5],'F');
+    }
+    setProgress(i+1,mazes.length);
+    if(i%20===0)await tick();
+  }
+  doc.save(filename);
+}
+
+/* ---------- Progreso / estado ---------- */
+function showProgress(){$('progress').style.display='flex';}
+function hideProgress(){$('progress').style.display='none';$('progressFill').style.width='0%';}
+function setProgress(i,n){$('progressFill').style.width=(i/n*100)+'%';$('progressText').textContent=i+'/'+n;}
+function setBusy(b){['btnBatch','btnPNG','btnJPG','btnSVG','btnPDF','btnRegen'].forEach(id=>$(id).disabled=b);}
+
+/* ---------- Cookies y Google Analytics ---------- */
+const GA_ID='G-23L27N0YJ9'; // ← ID de Google Analytics 4
+const CONSENT_KEY='laberintos_consent_v1';
+let gaLoaded=false;
+const getConsent=()=>{try{return JSON.parse(localStorage.getItem(CONSENT_KEY)||'null');}catch(e){return null;}};
+function loadGA(){
+  if(gaLoaded||!GA_ID||GA_ID.indexOf('XXXX')>-1)return;
+  gaLoaded=true;
+  window.dataLayer=window.dataLayer||[];
+  window.gtag=function(){dataLayer.push(arguments);};
+  gtag('js',new Date());
+  gtag('config',GA_ID,{anonymize_ip:true});
+  const s=document.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtag/js?id='+GA_ID;
+  document.head.appendChild(s);
+}
+function applyConsent(c){
+  if(GA_ID&&GA_ID.indexOf('XXXX')===-1){
+    window['ga-disable-'+GA_ID]=!c.analytics;
+    if(c.analytics)loadGA();
+  }
+}
+function showBanner(){
+  const c=getConsent();
+  $('swAnalytics').checked=!!(c&&c.analytics);
+  $('cbPanel').hidden=true;
+  $('cookieBanner').classList.add('show');
+  $('cookieReopen').style.display='none';
+}
+function hideBanner(){
+  $('cookieBanner').classList.remove('show');
+  $('cookieReopen').style.display='block';
+}
+function saveConsent(analytics){
+  const c={v:1,necessary:true,analytics:!!analytics,ts:new Date().toISOString()};
+  try{localStorage.setItem(CONSENT_KEY,JSON.stringify(c));}catch(e){}
+  applyConsent(c);hideBanner();
+}
+$('cbAccept').onclick=()=>saveConsent(true);
+$('cbReject').onclick=()=>saveConsent(false);
+$('cbSave').onclick=()=>saveConsent($('swAnalytics').checked);
+$('cbConfig').onclick=()=>{$('cbPanel').hidden=!$('cbPanel').hidden;};
+$('cookieReopen').onclick=showBanner;
+
+/* ---------- Modal legal ---------- */
+function openLegal(anchor){
+  $('legalModal').hidden=false;
+  const el=$(anchor);if(el)el.scrollIntoView({block:'start'});
+}
+$('linkCookies').onclick=e=>{e.preventDefault();openLegal('secCookies');};
+$('linkPriv').onclick=e=>{e.preventDefault();openLegal('secPriv');};
+$('lmClose').onclick=()=>$('legalModal').hidden=true;
+$('legalModal').addEventListener('click',e=>{if(e.target.id==='legalModal')$('legalModal').hidden=true;});
+
+/* ---------- UI ---------- */
+function regen(){
+  const st=$('seed').value.trim();
+  const s=st?xmur3(st+':'+state.nonce)():state.randSeed;
+  state.maze=generateMaze(readCfg(),s);
+}
+function render(){
+  if(!state.maze)return;
+  $('preview').innerHTML=buildSVG(state.maze,readCfg(),1,true);
+}
+function syncVisibility(){
+  $('customSizeRow').style.display=$('pdfFormat').value==='custom'?'grid':'none';
+  $('xyRow').style.display=$('pdfPosition').value==='exact'?'grid':'none';
+}
+const STRUCT=['cols','rows','startPos','endPos'];
+document.querySelectorAll('aside input, aside select').forEach(el=>{
+  el.addEventListener('input',()=>{
+    syncVisibility();scheduleSave();
+    if(el.id==='seed'){state.nonce=0;regen();}
+    else if(STRUCT.includes(el.id))regen();
+    render();
+  });
+});
+$('btnRegen').onclick=()=>{
+  if($('seed').value.trim())state.nonce++;else state.randSeed=(Math.random()*4294967296)>>>0;
+  regen();render();
+};
+async function exportRaster(mime,ext){
+  const cfg=readCfg();setBusy(true);try{
+    const{W,H}=dims(state.maze,cfg);
+    downloadBlob(await rasterize(buildSVG(state.maze,cfg,cfg.exportScale,true),W,H,cfg.exportScale,mime),'maze.'+ext);
+  }finally{setBusy(false);}
+}
+$('btnPNG').onclick=()=>exportRaster('image/png','png');
+$('btnJPG').onclick=()=>exportRaster('image/jpeg','jpg');
+$('btnSVG').onclick=()=>{downloadBlob(new Blob([buildSVG(state.maze,readCfg(),1,true)],{type:'image/svg+xml'}),'maze.svg');};
+$('btnPDF').onclick=async()=>{const cfg=readCfg();setBusy(true);showProgress();try{
+  await buildPDF([state.maze],cfg,'maze.pdf');
+}finally{setBusy(false);hideProgress();}};
+
+$('btnBatch').onclick=async()=>{
+  if(typeof JSZip==='undefined'||!window.jspdf){alert(I18N[currentLang]['misc.libsError']);return;}
+  const cfg=readCfg(),n=clampInt($('batchCount').value,1,500),fmt=$('batchFormat').value;
+  setBusy(true);showProgress();
+  try{
+    if(fmt==='pdf'){
+      const ms=[];for(let i=0;i<n;i++)ms.push(generateMaze(cfg,(Math.random()*4294967296)>>>0));
+      await buildPDF(ms,cfg,`mazes_${n}.pdf`);
+    }else if(fmt==='svg'){
+      const zip=new JSZip();
+      for(let i=0;i<n;i++){
+        zip.file(`maze_${String(i+1).padStart(3,'0')}.svg`,buildSVG(generateMaze(cfg,(Math.random()*4294967296)>>>0),cfg,1,true));
+        setProgress(i+1,n);if(i%20===0)await tick();
+      }
+      downloadBlob(await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}}),`mazes_${n}.zip`);
+    }else{
+      const isJpg=fmt==='jpg',mime=isJpg?'image/jpeg':'image/png',ext=isJpg?'jpg':'png';
+      const zip=new JSZip();let done=0;
+      await mapPool(n,async i=>{
+        const m=generateMaze(cfg,(Math.random()*4294967296)>>>0);
+        const{W,H}=dims(m,cfg);
+        const b=await rasterize(buildSVG(m,cfg,cfg.exportScale,true),W,H,cfg.exportScale,mime);
+        zip.file(`maze_${String(i+1).padStart(3,'0')}.${ext}`,b);
+        setProgress(++done,n);
+      },4);
+      downloadBlob(await zip.generateAsync({type:'blob',compression:'STORE'}),`mazes_${n}.zip`);
+    }
+  }catch(e){console.error(e);alert(I18N[currentLang]['misc.batchError']+e.message);}
+  finally{setBusy(false);hideProgress();}
+};
+
+/* ---------- Toggle idioma ---------- */
+$('langToggle').onclick=()=>{
+  applyLang(currentLang==='es'?'en':'es');
+};
+
+/* ---------- Inicio ---------- */
+applyLang(detectLang());
+loadSettings();
+try{syncVisibility();regen();render();}
+catch(e){$('preview').textContent=I18N[currentLang]['misc.initError']+e.message;}
+const _c=getConsent();
+if(_c){applyConsent(_c);hideBanner();}else{showBanner();}
+</script>
+</body>
+</html>
