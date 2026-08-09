@@ -168,7 +168,7 @@
       <option value="custom" data-i18n="pdf.custom">Personalizado</option>
     </select></div>
     <div class="row" id="customSizeRow" style="display:none"><label data-i18n="pdf.wXh">Ancho × alto (mm)</label>
-      <div><input type="number" id="customW" value="210" style="width:54px"> × <input type="number" id="customH" value="297" style="width:54px"></div></div>
+      <div><input type="number" id="customW" value="210" step="0.1" min="70" max="1000" style="width:60px"> × <input type="number" id="customH" value="297" step="0.1" min="70" max="1000" style="width:60px"></div></div>
     <div class="row"><label data-i18n="pdf.orientation">Orientación</label><select id="pdfOrientation">
       <option value="p" selected data-i18n="pdf.portrait">Vertical</option>
       <option value="l" data-i18n="pdf.landscape">Horizontal</option>
@@ -180,9 +180,9 @@
       <option value="exact" data-i18n="pdf.exact">Coordenadas exactas</option>
     </select></div>
     <div class="row" id="xyRow" style="display:none"><label>X · Y (mm)</label>
-      <div><input type="number" id="pdfX" value="20" style="width:54px"> , <input type="number" id="pdfY" value="20" style="width:54px"></div></div>
+      <div><input type="number" id="pdfX" value="20" step="0.1" style="width:54px"> , <input type="number" id="pdfY" value="20" step="0.1" style="width:54px"></div></div>
     <div class="row"><label data-i18n="pdf.sizeInPage">Tamaño en hoja</label>
-      <div style="display:flex;gap:6px;align-items:center"><input type="number" id="pdfSize" value="80" style="width:60px">
+      <div style="display:flex;gap:6px;align-items:center"><input type="number" id="pdfSize" value="80" step="0.1" min="5" max="200" style="width:60px">
       <select id="pdfSizeMode" style="width:82px">
         <option value="pct" selected data-i18n="pdf.pctW">% ancho</option>
         <option value="mm" data-i18n="pdf.mmW">mm ancho</option>
@@ -670,7 +670,7 @@ async function mapPool(count,worker,conc){
 function hexRGB(h){h=h.replace('#','');if(h.length===3)h=h.split('').map(c=>c+c).join('');const n=parseInt(h,16);return[n>>16&255,n>>8&255,n&255];}
 const CAPS={butt:0,round:1,square:2};
 
-const SIZES={a4:[210,297],a3:[297,420],a5:[148,210],letter:[216,279],legal:[216,356]};
+const SIZES={a4:[210,297],a3:[297,420],a5:[148,210],letter:[215.9,279.4],legal:[216,356]};
 function pageSize(cfg){let[w,h]=SIZES[cfg.pdfFormat]||[210,297];
   if(cfg.pdfFormat==='custom'){w=cfg.customW;h=cfg.customH;}
   if(cfg.pdfOrientation==='l'&&h>w)[w,h]=[h,w];
